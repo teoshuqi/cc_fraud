@@ -1,0 +1,6 @@
+venv/
+*.pyc
+*.pdf
+*.csv
+.env
+.DS_Store
