@@ -4,3 +4,5 @@ venv/
 *.csv
 .env
 .DS_Store
+mlartifacts/
+*.pickle
