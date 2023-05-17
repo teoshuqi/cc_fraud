@@ -22,6 +22,7 @@ TRACKING_URI = os.environ['MLFLOW_TRACKING_URI']
 EXPERIMENT_NAME = os.environ['MLFLOW_EXPERIMENT_NAME']
 SEED = int(os.environ['SEED'])
 TARGET = os.environ['TARGET']
+N = int(os.environ['NTRIALS'])
 
 
 # Setup MLflow
@@ -33,12 +34,14 @@ print(experiment)
 
 
 train_data = pd.read_csv('fraudTrain.csv')
-y_train = train_data.iloc[:20000][TARGET]
-X_train = train_data.iloc[:20000].drop(TARGET, axis=1)
+y_train = train_data.iloc[:200000][TARGET]
+X_train = train_data.iloc[:200000].drop(TARGET, axis=1)
 
-
+feature_logic = process.FeatureEngineering(ndays=[1, 14, 30])
+added_features = feature_logic.transform(X_train)
+final_x, variables = feature_logic.preprocess(added_features)
 # log parameters into MLflow
-N = 5
+
 for i in range(N):
     with mlflow.start_run(experiment_id=experiment.experiment_id):
         n_estimator = random.choice(np.arange(50, 300))
@@ -51,10 +54,6 @@ for i in range(N):
         }
         mlflow.log_params(estimators)
         print(n_estimator, max_depth, min_samples_leaf)
-
-        feature_logic = process.FeatureEngineering()
-        added_features = feature_logic.transform(X_train)
-        final_x, variables = feature_logic.preprocess(added_features)
 
         clf = RandomForestClassifier(n_jobs=-1,
                                      class_weight='balanced_subsample',
