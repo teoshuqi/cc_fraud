@@ -5,7 +5,6 @@ import os
 import pickle
 
 import mlflow
-import random
 import mlflow.sklearn
 import pandas as pd
 import numpy as np
@@ -20,7 +19,7 @@ importlib.reload(mlflow)
 
 load_dotenv()
 TRACKING_URI = os.environ['MLFLOW_TRACKING_URI']
-EXPERIMENT_NAME = os.environ['MLFLOW_EXPERIMENT_NAME'] +'_PROD'
+EXPERIMENT_NAME = os.environ['MLFLOW_EXPERIMENT_NAME'] + '_PROD'
 SEED = int(os.environ['SEED'])
 TARGET = os.environ['TARGET']
 
@@ -34,8 +33,8 @@ print(experiment)
 
 
 train_data = pd.read_csv('fraudTrain.csv')
-y_train = train_data.iloc[:20000][TARGET]
-X_train = train_data.iloc[:20000].drop(TARGET, axis=1)
+y_train = train_data.iloc[:10000][TARGET]
+X_train = train_data.iloc[:10000].drop(TARGET, axis=1)
 
 test_data = pd.read_csv('fraudTest.csv')
 y_test = test_data[TARGET]
@@ -55,14 +54,14 @@ with mlflow.start_run(experiment_id=experiment.experiment_id):
     final_x, variables = feature_logic.preprocess(added_features)
 
     clf = RandomForestClassifier(n_jobs=-1,
-                                class_weight='balanced_subsample',
-                                random_state=SEED,
-                                **best_params
-                                )
+                                 class_weight='balanced_subsample',
+                                 random_state=SEED,
+                                 **best_params
+                                 )
     clf.fit(final_x, y_train)
 
     added_features_test = feature_logic.transform(X_test)
-    final_x_test = feature_logic.preprocess(added_features_test)
+    final_x_test, _ = feature_logic.preprocess(added_features_test)
     y_pred = clf.predict(final_x_test)
     precision = precision_score(y_test, y_pred)
     recall = recall_score(y_test, y_pred)
@@ -81,9 +80,12 @@ with mlflow.start_run(experiment_id=experiment.experiment_id):
         pickle.dump(feature_logic.encoder, handle, protocol=pickle.HIGHEST_PROTOCOL)
     mlflow.log_artifact('encoder.pickle')
     with open('scaler.pickle', 'wb') as handle:
-        pickle.dump(feature_logic.encoder, handle, protocol=pickle.HIGHEST_PROTOCOL)
+        pickle.dump(feature_logic.scaler, handle, protocol=pickle.HIGHEST_PROTOCOL)
     mlflow.log_artifact('scaler.pickle')
-    
+
+    input_example = {var: final_x[0][idx] for idx, var in enumerate(variables)}
+
     mlflow.sklearn.log_model(sk_model=clf,
                              artifact_path='rf_models',
-                             registered_model_name='fraud_rf_model')
+                             registered_model_name='fraud_rf_model',
+                             input_example=input_example)
