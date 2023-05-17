@@ -15,7 +15,7 @@ importlib.reload(process)
 # define the transformer
 class FeatureEngineering():
 
-    def __init__(self, ndays=[1,30], encoder=None, scaler=None):
+    def __init__(self, ndays=[1, 30], encoder=None, scaler=None):
         self.X = None
         self.ndays = ndays
         self.encoder = encoder
@@ -92,23 +92,25 @@ class FeatureEngineering():
 
         # Aggregated parameters
         agg_params = self.__calc_aggregate_params_n_days(X)
-        
+
         final_X = pd.concat([X, agg_params], axis=1)
         final_X = final_X.drop(['Unnamed: 0', 'trans_date_trans_time', 'cc_num', 'merchant'], axis=1)
         return final_X
-    
+
     def preprocess(self, X):
         cat_vars = ['gender', 'category']
+        real_vars = [i for i in X.columns if i not in cat_vars]
+        X_cat = X[cat_vars]
+        X_real = X.drop(cat_vars, axis=1).to_numpy()
         # one hot encoding
         if self.encoder is None:
-            self.encoder = OneHotEncoder(sparse=False).fit(X[cat_vars])
-        cat_x = self.encoder.transform(X[cat_vars])
+            self.encoder = OneHotEncoder(sparse_output=False).fit(X_cat)
+        cat_x = self.encoder.transform(X_cat)
         # min max scaling
-        real_vars = [i for i in X.columns if i not in cat_vars]
         if self.scaler is None:
-            self.scaler = MinMaxScaler().fit(X[real_vars])
-        real_x = self.scaler.transform(X[real_vars])
-        final_x = np.concatenate((cat_x, real_x), axis=1)
+            self.scaler = MinMaxScaler().fit(X_real)
+        real_x = self.scaler.transform(X_real)
+        final_x = np.concatenate((cat_x, real_x), axis=1).tolist()
         variables = self.encoder.get_feature_names_out(cat_vars).tolist() + real_vars
         return final_x, variables
 
