@@ -37,14 +37,13 @@ test_data = pd.read_csv('fraudTest.csv')
 y_test = test_data[TARGET]
 X_test = test_data.drop(TARGET, axis=1)
 
-
-logged_model = 'runs:/22915a34f27b47f2af7169c1698339a2/rf_models'
-encoder_artifact = 'mlartifacts/2/22915a34f27b47f2af7169c1698339a2/artifacts/encoder.pickle'
-scaler_artifact = 'mlartifacts/2/22915a34f27b47f2af7169c1698339a2/artifacts/encoder.pickle'
+runid = '7bb4e59c617c4d7baee0acc7d82cdd53'
+logged_model = f'runs:/{runid}/rf_models'
+encoder_artifact = f'mlartifacts/2/{runid}/artifacts/encoder.pickle'
+scaler_artifact = f'mlartifacts/2/{runid}/artifacts/scaler.pickle'
 
 # Load model as a PyFuncModel.
 loaded_model = mlflow.pyfunc.load_model(logged_model)
-
 
 
 # log parameters into MLflow
@@ -73,5 +72,6 @@ with mlflow.start_run(experiment_id=experiment.experiment_id):
 
     mlflow.log_metrics(metrics)
 
-    mlflow.sklearn.log_model(sk_model=loaded_model)
+    mlflow.sklearn.log_model(sk_model=loaded_model,
+                             artifact_path=logged_model)
 
